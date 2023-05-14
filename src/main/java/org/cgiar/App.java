@@ -4,12 +4,11 @@ import com.google.common.collect.Lists;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.yaml.snakeyaml.Yaml;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class App
 {
@@ -27,79 +26,25 @@ public class App
         int yearFrom = (Integer)config.get("yearFrom");
         int yearTo = (Integer)config.get("yearTo");
         String countryCode = (String)config.get("countryCode");
+        int numberOfThreads = (Integer)config.get("numberOfThreads");
 
         // List of locations to fetch the weather data
         Object[] locations = getLocationInfo(weatherLocationFile, countryCode);
-        OkHttpClient client = new OkHttpClient();
 
-        // Converter
-        IcasaToDssatWth itdw = new IcasaToDssatWth();
-
-        // Looping through the locations one by one
-        for (Object location: locations)
+        // Concurrency
+        try
         {
-            Object[] o = (Object[]) location;
-            int cellId = (int)(o[0]);
-            String longitude = (String)o[1];    //X
-            String latitude = (String)o[2];     //Y
-            String iso3 = (String)o[3];
-
-            // Accumulated outputs
-            StringBuilder icasa = new StringBuilder();
-
-            // Loop over the years from 2000 to the present
-            for (int year = yearFrom; year <= yearTo; year++)
+            ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
+            for (Object location: locations)
             {
-                String start_date = year + "0101";
-                String end_date = year + "1231";
-
-                String apiUrl = NASA_POWER_API_URL
-                        .replace("{longitude}", longitude)
-                        .replace("{latitude}", latitude)
-                        .replace("{start_date}", start_date)
-                        .replace("{end_date}", end_date);
-
-                System.out.println("> Calling: "+apiUrl);
-
-                Request request = new Request.Builder()
-                        .url(apiUrl)
-                        .build();
-
-                try (Response response = client.newCall(request).execute())
-                {
-                    if (response.isSuccessful())
-                    {
-                        assert response.body() != null;
-                        icasa.append(response.body().string());
-                    }
-                    else
-                    {
-                        System.err.println("> Error: " + response.message());
-                    }
-                }
-                catch (IOException e)
-                {
-                    System.err.println("> Error: " + e.getMessage());
-                }
+                Object[] o = (Object[])location;
+                executor.submit(new CallAPI(o, yearFrom, yearTo));
             }
-
-            // Convert ICASA to WTH
-            String wth = itdw.convert(cellId, iso3, icasa.toString());
-
-            // Write the accumulated output file
-            String wthFileName = "." + d + "out" + d + iso3 + "_" + cellId + "_" + yearFrom + "-" + yearTo + ".wth";
-            System.out.println("> Writing: "+wthFileName);
-            try
-            {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(wthFileName));
-                writer.write(wth);
-                writer.close();
-            }
-            catch (IOException ex)
-            {
-                System.out.println("> Skipping a file due to the locked file exception...");
-            }
-
+            executor.shutdown();
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
         }
 
     }
@@ -123,9 +68,18 @@ public class App
                 String iso3 = record.get("ISO3");
 
                 // Limiting to the country code
-                if (!countryCode.isBlank() && countryCode.contains(iso3))
+                if (countryCode.equalsIgnoreCase("ALL"))
                 {
-
+                    // Putting all unit information in one object array
+                    Object[] o = new Object[4];
+                    o[0]  = cellId;
+                    o[1]  = x;
+                    o[2]  = y;
+                    o[3]  = iso3;
+                    locationInfo.add(o);
+                }
+                else if (!countryCode.isBlank() && countryCode.contains(iso3))
+                {
                     // Putting all unit information in one object array
                     Object[] o = new Object[4];
                     o[0]  = cellId;
