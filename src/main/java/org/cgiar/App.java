@@ -30,6 +30,7 @@ public class App
 
         // List of locations to fetch the weather data
         Object[] locations = getLocationInfo(weatherLocationFile, countryCode);
+        System.out.println("> Number of locations: "+locations.length);
 
         // Concurrency
         try

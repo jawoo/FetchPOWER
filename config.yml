@@ -1,5 +1,5 @@
-weatherLocationFile: point30m_gfsad1kcmv001_90pct_iso3_debug.csv
-yearFrom: 2021
+weatherLocationFile: point30m_gfsad1kcmv001_90pct_iso3.csv
+yearFrom: 2000
 yearTo: 2022
 numberOfThreads: 4
 countryCode: ALL
