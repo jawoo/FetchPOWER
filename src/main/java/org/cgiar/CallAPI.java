@@ -50,7 +50,7 @@ public class CallAPI implements Callable<Object>
                     .replace("{start_date}", start_date)
                     .replace("{end_date}", end_date);
 
-            //System.out.println("> Calling: "+apiUrl);
+            System.out.println("> Calling: "+iso3+"_"+cellId+" for "+year);
 
             Request request = new Request.Builder()
                     .url(apiUrl)
