@@ -1,5 +1,5 @@
-weatherLocationFile: point30m_gfsad1kcmv001_90pct_iso3.csv
+weatherLocationFile: cell30m_gfsad1km_tabulated.csv
 yearFrom: 2000
 yearTo: 2022
 numberOfThreads: 10
-countryCode: ETH
+countryCode: BGD,COD,ETH,GHA,GTM,HND,KEN,LBR,MDG,MWI,MLI,MOZ,NPL,NER,NGA,RWA,SEN,TZA,UGA,ZMB
